@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let monitor = GlobalEventMonitor()
     private let agentBridge = AgentBridge()
     private let desktopWatcher = ClaudeDesktopWatcher()
+    private var pomodoro: PomodoroEngine!
 
     private let panelSize = NSSize(width: 134, height: 154)
 
@@ -29,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupInput()
         setupAgentBridge()
+        setupPomodoro()
         panel.orderFrontRegardless()
 
         // Ask for Accessibility so global keyboard/scroll + the desktop watcher
@@ -61,6 +63,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.controller.setDesktopThinking(thinking)
         }
         desktopWatcher.start()
+    }
+
+    private func setupPomodoro() {
+        pomodoro = PomodoroEngine(state: state)
+        pomodoro.onPhaseChange = { [weak self] phase in
+            guard let self else { return }
+            let who = self.state.name.isEmpty ? "" : ", \(self.state.name)"
+            switch phase {
+            case .focus: self.controller.announce("focus\(who)!", happy: false)
+            case .brk:   self.controller.announce("break time\(who)!", happy: true)
+            }
+        }
+        if Settings.timerEnabled { setTimerVisible(true) }
+    }
+
+    /// Show/hide the timer shelf. The panel grows taller (upward, bottom stays
+    /// on the floor) so the timer sits below the cat.
+    private func setTimerVisible(_ on: Bool) {
+        state.timerVisible = on
+        Settings.timerEnabled = on
+        if on { pomodoro.refreshDurations() } else { pomodoro.pause() }
+
+        var frame = panel.frame
+        let bottom = frame.minY
+        frame.size.height = panelSize.height + (on ? CatSprite.timerStripHeight : 0)
+        frame.origin.y = bottom
+        panel.setFrame(frame, display: true, animate: true)
     }
 
     private func setupStatusItem() {
@@ -101,6 +130,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(withTitle: "Stretch Interval…", action: #selector(setStretchInterval), keyEquivalent: "").target = self
         menu.addItem(.separator())
+        menu.addItem(buildTimerMenu())
+        menu.addItem(.separator())
         if !AccessibilityPermission.isTrusted {
             menu.addItem(withTitle: "Enable Keyboard/Scroll Tricks…",
                          action: #selector(requestAccessibility), keyEquivalent: "").target = self
@@ -110,6 +141,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let button = statusItem.button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+        }
+    }
+
+    private func buildTimerMenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Pomodoro Timer", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        sub.addItem(withTitle: state.timerVisible ? "Hide Timer" : "Show Timer",
+                    action: #selector(toggleTimer), keyEquivalent: "").target = self
+        if state.timerVisible {
+            sub.addItem(withTitle: pomodoro.isRunning ? "Pause" : "Start",
+                        action: #selector(timerStartPause), keyEquivalent: "").target = self
+            sub.addItem(withTitle: "Reset", action: #selector(timerReset), keyEquivalent: "").target = self
+            sub.addItem(withTitle: "Skip Phase", action: #selector(timerSkip), keyEquivalent: "").target = self
+        }
+        sub.addItem(.separator())
+        sub.addItem(withTitle: "Focus Length… (\(Settings.focusMinutes)m)",
+                    action: #selector(setFocusLength), keyEquivalent: "").target = self
+        sub.addItem(withTitle: "Break Length… (\(Settings.breakMinutes)m)",
+                    action: #selector(setBreakLength), keyEquivalent: "").target = self
+        item.submenu = sub
+        return item
+    }
+
+    @objc private func toggleTimer() { setTimerVisible(!state.timerVisible) }
+    @objc private func timerStartPause() { pomodoro.startPause() }
+    @objc private func timerReset() { pomodoro.reset() }
+    @objc private func timerSkip() { pomodoro.skipPhase() }
+
+    @objc private func setFocusLength() {
+        promptText(title: "Focus length", info: "Minutes of focus per cycle.",
+                   placeholder: "25", initial: String(Settings.focusMinutes)) { value in
+            if let m = Int(value), m > 0 { Settings.focusMinutes = m; self.pomodoro.refreshDurations() }
+        }
+    }
+
+    @objc private func setBreakLength() {
+        promptText(title: "Break length", info: "Minutes of break per cycle.",
+                   placeholder: "5", initial: String(Settings.breakMinutes)) { value in
+            if let m = Int(value), m > 0 { Settings.breakMinutes = m; self.pomodoro.refreshDurations() }
         }
     }
 

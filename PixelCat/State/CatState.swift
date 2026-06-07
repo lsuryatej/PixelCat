@@ -56,5 +56,13 @@ final class CatState {
     /// The user's name, used in reminder copy.
     var name: String = ""
 
+    // Pomodoro / DeskMinder timer
+    enum TimerPhase { case focus, brk }
+    var timerVisible = false
+    var timerRunning = false
+    var timerPhase: TimerPhase = .focus
+    var timerRemaining = 0       // seconds left in the current phase
+    var timerTotal = 0           // full length of the current phase (for the bar)
+
     var isInteracting: Bool { mood == .dragging || mood == .happy }
 }

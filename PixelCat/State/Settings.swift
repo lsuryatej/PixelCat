@@ -26,4 +26,25 @@ enum Settings {
         get { UserDefaults.standard.string(forKey: pinnedNoteKey) ?? "" }
         set { UserDefaults.standard.set(newValue, forKey: pinnedNoteKey) }
     }
+
+    // MARK: Pomodoro timer
+
+    private static let timerEnabledKey = "pixelcat.timerEnabled"
+    private static let focusMinutesKey = "pixelcat.focusMinutes"
+    private static let breakMinutesKey = "pixelcat.breakMinutes"
+
+    static var timerEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: timerEnabledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: timerEnabledKey) }
+    }
+
+    static var focusMinutes: Int {
+        get { let v = UserDefaults.standard.integer(forKey: focusMinutesKey); return v == 0 ? 25 : v }
+        set { UserDefaults.standard.set(newValue, forKey: focusMinutesKey) }
+    }
+
+    static var breakMinutes: Int {
+        get { let v = UserDefaults.standard.integer(forKey: breakMinutesKey); return v == 0 ? 5 : v }
+        set { UserDefaults.standard.set(newValue, forKey: breakMinutesKey) }
+    }
 }

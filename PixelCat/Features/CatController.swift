@@ -113,6 +113,18 @@ final class CatController {
         snapToBottom()
     }
 
+    /// Announce something (timer phase change, etc.): bubble + meow, optionally
+    /// with a happy hop.
+    func announce(_ text: String, happy: Bool) {
+        guard !sleeping else { return }
+        showBubble(text, seconds: 4)
+        if happy {
+            happyUntil = ProcessInfo.processInfo.systemUptime + 1.3
+            state.lift = 16
+        }
+        sound.meow()
+    }
+
     func setHeadHover(_ over: Bool) {
         headHover = over
         // Grace window so back-and-forth strokes (and brief exits off the top

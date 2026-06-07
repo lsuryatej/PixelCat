@@ -22,13 +22,20 @@ enum CatSprite {
     static let steamCol = Color(red: 0.78, green: 0.78, blue: 0.80)
     static let paperCol = Color(red: 0.98, green: 0.97, blue: 0.93)
 
+    static let focusCol = Color(red: 0.90, green: 0.38, blue: 0.32)
+    static let breakCol = Color(red: 0.32, green: 0.70, blue: 0.52)
+
     static let grid: CGFloat = 32
+    /// Extra height reserved at the bottom for the pixel timer (the cat stands
+    /// on this shelf when the timer is shown). The panel grows by this amount.
+    static let timerStripHeight: CGFloat = 46
 
     // MARK: Entry point
 
     static func draw(in ctx: inout GraphicsContext, size: CGSize, state: CatState, time t: Double) {
         let u = size.width / grid
-        let footY = size.height - u * 0.5
+        let inset = state.timerVisible ? timerStripHeight : 0
+        let footY = size.height - inset - u * 0.5
         let yShift = footY - 31 * u
 
         // ---- Cat body (transformed copy) ----
@@ -83,6 +90,43 @@ enum CatSprite {
         // ---- Overlays (untransformed, on top) ----
         let headTopY = yShift + 6 * u
         drawOverlays(ctx, size: size, state: state, time: t, u: u, headTopY: headTopY, footY: footY)
+
+        // ---- Pixel timer shelf ----
+        if state.timerVisible {
+            let strip = CGRect(x: 0, y: size.height - inset, width: size.width, height: inset)
+            drawTimer(ctx, in: strip, state: state)
+        }
+    }
+
+    // MARK: Timer
+
+    private static func drawTimer(_ ctx: GraphicsContext, in rect: CGRect, state: CatState) {
+        let phaseColor = state.timerPhase == .focus ? focusCol : breakCol
+        let dim = !state.timerRunning
+
+        // MM:SS digits
+        let m = max(0, state.timerRemaining) / 60
+        let s = max(0, state.timerRemaining) % 60
+        let text = String(format: "%02d:%02d", m, s)
+        let cell = rect.height * 0.13
+        let textW = PixelFont.width(text, cell: cell)
+        let tx = rect.midX - textW / 2
+        let ty = rect.minY + cell * 0.8
+        PixelFont.draw(ctx, text, x: tx, y: ty, cell: cell, color: outline.opacity(dim ? 0.45 : 0.9))
+
+        // Stretchable progress bar
+        let barW = rect.width * 0.72
+        let barH = cell * 1.1
+        let barX = rect.midX - barW / 2
+        let barY = ty + cell * 5 + cell * 0.7
+        let track = CGRect(x: barX, y: barY, width: barW, height: barH)
+        ctx.fill(Path(roundedRect: track, cornerRadius: barH / 2), with: .color(phaseColor.opacity(0.2)))
+        let prog = state.timerTotal > 0 ? CGFloat(state.timerRemaining) / CGFloat(state.timerTotal) : 0
+        if prog > 0 {
+            let fill = CGRect(x: barX, y: barY, width: max(barH, barW * prog), height: barH)
+            ctx.fill(Path(roundedRect: fill, cornerRadius: barH / 2), with: .color(phaseColor.opacity(dim ? 0.55 : 1)))
+        }
+        ctx.stroke(Path(roundedRect: track, cornerRadius: barH / 2), with: .color(outline.opacity(0.4)), lineWidth: 1)
     }
 
     // MARK: Overlays
