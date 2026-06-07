@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let desktopWatcher = ClaudeDesktopWatcher()
     private var pomodoro: PomodoroEngine!
 
+    private var prefsWindow: NSWindow?
+
     private let panelSize = NSSize(width: 134, height: 154)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -35,8 +37,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupPomodoro()
         panel.orderFrontRegardless()
 
-        // Ask for Accessibility so global keyboard/scroll + the desktop watcher
-        // can work. Eye-follow / drag / petting work without it.
         AccessibilityPermission.prompt()
     }
 
@@ -80,8 +80,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if Settings.timerEnabled { setTimerVisible(true) }
     }
 
-    /// Show/hide the timer shelf. The panel grows taller (upward, bottom stays
-    /// on the floor) so the timer sits below the cat.
+    /// Show/hide the timer shelf; the panel grows upward (bottom stays on the
+    /// floor) so the timer sits below the cat.
     private func setTimerVisible(_ on: Bool) {
         state.timerVisible = on
         Settings.timerEnabled = on
@@ -105,7 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: Status item
+    // MARK: Menu (quick actions only — everything configurable lives in Settings…)
 
     @objc private func statusItemClicked() {
         if NSApp.currentEvent?.type == .rightMouseUp {
@@ -124,22 +124,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "Wake", action: #selector(wake), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Stretch Now", action: #selector(stretchNow), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Set Name…", action: #selector(setName), keyEquivalent: "").target = self
-        menu.addItem(withTitle: state.pinnedNote.isEmpty ? "Pin Note…" : "Edit Note…",
-                     action: #selector(pinNote), keyEquivalent: "").target = self
-        if !state.pinnedNote.isEmpty {
-            menu.addItem(withTitle: "Clear Note", action: #selector(clearNote), keyEquivalent: "").target = self
+        menu.addItem(withTitle: state.timerVisible ? "Hide Timer" : "Show Timer",
+                     action: #selector(toggleTimer), keyEquivalent: "").target = self
+        if state.timerVisible {
+            menu.addItem(withTitle: state.timerRunning ? "Pause Timer" : "Start Timer",
+                         action: #selector(timerStartPause), keyEquivalent: "").target = self
         }
-        menu.addItem(withTitle: "Stretch Interval…", action: #selector(setStretchInterval), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(buildAppearanceMenu())
-        menu.addItem(buildTimerMenu())
-        menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
         if !AccessibilityPermission.isTrusted {
             menu.addItem(withTitle: "Enable Keyboard/Scroll Tricks…",
                          action: #selector(requestAccessibility), keyEquivalent: "").target = self
-            menu.addItem(.separator())
         }
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Quit PixelCat", action: #selector(quit), keyEquivalent: "q").target = self
 
         if let button = statusItem.button {
@@ -147,151 +144,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func buildAppearanceMenu() -> NSMenuItem {
-        let item = NSMenuItem(title: "Appearance", action: nil, keyEquivalent: "")
-        let sub = NSMenu()
-
-        let colorItem = NSMenuItem(title: "Color", action: nil, keyEquivalent: "")
-        let colorMenu = NSMenu()
-        for c in CatColor.allCases {
-            let mi = NSMenuItem(title: c.display, action: #selector(selectColor(_:)), keyEquivalent: "")
-            mi.target = self
-            mi.representedObject = c.rawValue
-            mi.state = (state.coatColor == c) ? .on : .off
-            colorMenu.addItem(mi)
-        }
-        colorItem.submenu = colorMenu
-        sub.addItem(colorItem)
-
-        let patItem = NSMenuItem(title: "Pattern", action: nil, keyEquivalent: "")
-        let patMenu = NSMenu()
-        for p in CatPattern.allCases {
-            let mi = NSMenuItem(title: p.display, action: #selector(selectPattern(_:)), keyEquivalent: "")
-            mi.target = self
-            mi.representedObject = p.rawValue
-            mi.state = (state.coatPattern == p) ? .on : .off
-            patMenu.addItem(mi)
-        }
-        patItem.submenu = patMenu
-        sub.addItem(patItem)
-
-        item.submenu = sub
-        return item
-    }
-
-    @objc private func selectColor(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String, let c = CatColor(rawValue: raw) else { return }
-        state.coatColor = c
-        Settings.coatColor = raw
-    }
-
-    @objc private func selectPattern(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String, let p = CatPattern(rawValue: raw) else { return }
-        state.coatPattern = p
-        Settings.coatPattern = raw
-    }
-
-    private func buildTimerMenu() -> NSMenuItem {
-        let item = NSMenuItem(title: "Pomodoro Timer", action: nil, keyEquivalent: "")
-        let sub = NSMenu()
-        sub.addItem(withTitle: state.timerVisible ? "Hide Timer" : "Show Timer",
-                    action: #selector(toggleTimer), keyEquivalent: "").target = self
-        if state.timerVisible {
-            sub.addItem(withTitle: pomodoro.isRunning ? "Pause" : "Start",
-                        action: #selector(timerStartPause), keyEquivalent: "").target = self
-            sub.addItem(withTitle: "Reset", action: #selector(timerReset), keyEquivalent: "").target = self
-            sub.addItem(withTitle: "Skip Phase", action: #selector(timerSkip), keyEquivalent: "").target = self
-        }
-        sub.addItem(.separator())
-        sub.addItem(withTitle: "Focus Length… (\(Settings.focusMinutes)m)",
-                    action: #selector(setFocusLength), keyEquivalent: "").target = self
-        sub.addItem(withTitle: "Break Length… (\(Settings.breakMinutes)m)",
-                    action: #selector(setBreakLength), keyEquivalent: "").target = self
-        item.submenu = sub
-        return item
-    }
-
-    @objc private func toggleTimer() { setTimerVisible(!state.timerVisible) }
-    @objc private func timerStartPause() { pomodoro.startPause() }
-    @objc private func timerReset() { pomodoro.reset() }
-    @objc private func timerSkip() { pomodoro.skipPhase() }
-
-    @objc private func setFocusLength() {
-        promptText(title: "Focus length", info: "Minutes of focus per cycle.",
-                   placeholder: "25", initial: String(Settings.focusMinutes)) { value in
-            if let m = Int(value), m > 0 { Settings.focusMinutes = m; self.pomodoro.refreshDurations() }
-        }
-    }
-
-    @objc private func setBreakLength() {
-        promptText(title: "Break length", info: "Minutes of break per cycle.",
-                   placeholder: "5", initial: String(Settings.breakMinutes)) { value in
-            if let m = Int(value), m > 0 { Settings.breakMinutes = m; self.pomodoro.refreshDurations() }
-        }
-    }
-
     @objc private func toggleVisible() { state.visible.toggle() }
     @objc private func sleep() { state.visible = true; controller.setSleeping(true) }
     @objc private func wake() { state.visible = true; controller.setSleeping(false) }
     @objc private func stretchNow() { state.visible = true; controller.triggerStretch() }
+    @objc private func toggleTimer() { setTimerVisible(!state.timerVisible) }
+    @objc private func timerStartPause() { pomodoro.startPause() }
     @objc private func requestAccessibility() { AccessibilityPermission.prompt() }
     @objc private func quit() { NSApp.terminate(nil) }
 
-    @objc private func setName() {
-        promptText(title: "What's your name?",
-                   info: "The cat calls you by name in reminders and when an agent finishes.",
-                   placeholder: "Your name",
-                   initial: state.name) { value in
-            self.state.name = value
-            Settings.name = value
+    @objc private func openSettings() {
+        if prefsWindow == nil {
+            let view = PreferencesView(
+                state: state,
+                pomodoro: pomodoro,
+                setTimerVisible: { [weak self] on in self?.setTimerVisible(on) },
+                rescheduleStretch: { [weak self] in self?.controller.scheduleStretchReminder() }
+            )
+            let host = NSHostingController(rootView: view)
+            let win = NSWindow(contentViewController: host)
+            win.title = "PixelCat Settings"
+            win.styleMask = [.titled, .closable]
+            win.isReleasedWhenClosed = false
+            win.level = .floating
+            prefsWindow = win
         }
-    }
-
-    @objc private func pinNote() {
-        promptText(title: "Pin a note",
-                   info: "Shown in a bubble above the cat until you clear it.",
-                   placeholder: "Remember to…",
-                   initial: state.pinnedNote) { value in
-            self.state.pinnedNote = value
-            Settings.pinnedNote = value
-        }
-    }
-
-    @objc private func clearNote() {
-        state.pinnedNote = ""
-        Settings.pinnedNote = ""
-    }
-
-    @objc private func setStretchInterval() {
-        promptText(title: "Stretch reminder",
-                   info: "Minutes between stretch reminders.",
-                   placeholder: "30",
-                   initial: String(Settings.stretchIntervalMinutes)) { value in
-            if let minutes = Int(value), minutes > 0 {
-                Settings.stretchIntervalMinutes = minutes
-                self.controller.scheduleStretchReminder()
-            }
-        }
-    }
-
-    // MARK: Helper
-
-    private func promptText(title: String, info: String, placeholder: String, initial: String, onSave: @escaping (String) -> Void) {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = info
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
-        field.stringValue = initial
-        field.placeholderString = placeholder
-        alert.accessoryView = field
-        alert.window.initialFirstResponder = field
-
         NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            onSave(field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
+        prefsWindow?.center()
+        prefsWindow?.makeKeyAndOrderFront(nil)
     }
 }
