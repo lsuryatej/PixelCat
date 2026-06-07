@@ -56,6 +56,10 @@ final class CatState {
     /// The user's name, used in reminder copy.
     var name: String = ""
 
+    // Appearance
+    var coatColor: CatColor = .cream
+    var coatPattern: CatPattern = .solid
+
     // Pomodoro / DeskMinder timer
     enum TimerPhase { case focus, brk }
     var timerVisible = false

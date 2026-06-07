@@ -47,4 +47,19 @@ enum Settings {
         get { let v = UserDefaults.standard.integer(forKey: breakMinutesKey); return v == 0 ? 5 : v }
         set { UserDefaults.standard.set(newValue, forKey: breakMinutesKey) }
     }
+
+    // MARK: Appearance
+
+    private static let coatColorKey = "pixelcat.coatColor"
+    private static let coatPatternKey = "pixelcat.coatPattern"
+
+    static var coatColor: String {
+        get { UserDefaults.standard.string(forKey: coatColorKey) ?? "cream" }
+        set { UserDefaults.standard.set(newValue, forKey: coatColorKey) }
+    }
+
+    static var coatPattern: String {
+        get { UserDefaults.standard.string(forKey: coatPatternKey) ?? "solid" }
+        set { UserDefaults.standard.set(newValue, forKey: coatPatternKey) }
+    }
 }

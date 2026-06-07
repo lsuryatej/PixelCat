@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         state.name = Settings.name
         state.pinnedNote = Settings.pinnedNote
+        state.coatColor = CatColor(rawValue: Settings.coatColor) ?? .cream
+        state.coatPattern = CatPattern(rawValue: Settings.coatPattern) ?? .solid
 
         setupPanel()
         setupStatusItem()
@@ -130,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(withTitle: "Stretch Interval…", action: #selector(setStretchInterval), keyEquivalent: "").target = self
         menu.addItem(.separator())
+        menu.addItem(buildAppearanceMenu())
         menu.addItem(buildTimerMenu())
         menu.addItem(.separator())
         if !AccessibilityPermission.isTrusted {
@@ -142,6 +145,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
         }
+    }
+
+    private func buildAppearanceMenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "Appearance", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+
+        let colorItem = NSMenuItem(title: "Color", action: nil, keyEquivalent: "")
+        let colorMenu = NSMenu()
+        for c in CatColor.allCases {
+            let mi = NSMenuItem(title: c.display, action: #selector(selectColor(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = c.rawValue
+            mi.state = (state.coatColor == c) ? .on : .off
+            colorMenu.addItem(mi)
+        }
+        colorItem.submenu = colorMenu
+        sub.addItem(colorItem)
+
+        let patItem = NSMenuItem(title: "Pattern", action: nil, keyEquivalent: "")
+        let patMenu = NSMenu()
+        for p in CatPattern.allCases {
+            let mi = NSMenuItem(title: p.display, action: #selector(selectPattern(_:)), keyEquivalent: "")
+            mi.target = self
+            mi.representedObject = p.rawValue
+            mi.state = (state.coatPattern == p) ? .on : .off
+            patMenu.addItem(mi)
+        }
+        patItem.submenu = patMenu
+        sub.addItem(patItem)
+
+        item.submenu = sub
+        return item
+    }
+
+    @objc private func selectColor(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let c = CatColor(rawValue: raw) else { return }
+        state.coatColor = c
+        Settings.coatColor = raw
+    }
+
+    @objc private func selectPattern(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let p = CatPattern(rawValue: raw) else { return }
+        state.coatPattern = p
+        Settings.coatPattern = raw
     }
 
     private func buildTimerMenu() -> NSMenuItem {

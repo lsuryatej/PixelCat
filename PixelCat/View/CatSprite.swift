@@ -60,10 +60,11 @@ enum CatSprite {
         c.scaleBy(x: state.facing, y: 1)
         c.translateBy(x: -pivotX, y: -pivotY)
 
+        let pal = state.coatColor.palette
         let heat = state.heat
-        let body = lerp(furBase, heatRed, heat)
-        let bodyLight = lerp(furLight, heatRed, heat * 0.7)
-        let bodyShade = lerp(furShade, heatRed, heat)
+        let body = lerp(pal.base, heatRed, heat)
+        let bodyLight = lerp(pal.light, heatRed, heat * 0.7)
+        let bodyShade = lerp(pal.shade, heatRed, heat)
 
         // Tail tip sways; an occasional flick speeds it up.
         let flick = (sin(t * 0.7) > 0.93) ? 1.0 : 0.0
@@ -81,6 +82,7 @@ enum CatSprite {
         drawBody(c, u: u, body: body, light: bodyLight, shade: bodyShade, pawL: pawL, pawR: pawR)
         drawHead(c, u: u, body: body, light: bodyLight, shade: bodyShade)
         drawEars(c, u: u, body: body, shade: bodyShade)
+        drawPattern(c, u: u, state: state, shade: bodyShade)
         drawFace(c, u: u, state: state, time: t)
 
         if state.mood == .happy {
@@ -222,6 +224,38 @@ enum CatSprite {
                 let rect = CGRect(x: x + CGFloat(col) * s, y: y + CGFloat(r) * s, width: s, height: s)
                 ctx.fill(Path(rect), with: .color(color))
             }
+        }
+    }
+
+    // MARK: Pattern
+
+    private static func drawPattern(_ ctx: GraphicsContext, u: CGFloat, state: CatState, shade: Color) {
+        let mark = lerp(shade, outline, 0.5)
+        let white = Color(red: 0.99, green: 0.98, blue: 0.97)
+
+        switch state.coatPattern {
+        case .solid:
+            break
+        case .tabby:
+            for (x, y) in [(15, 9), (16, 9), (14, 10), (17, 10), (13, 11), (18, 11)] { cell(ctx, x, y, u, mark) }
+            cell(ctx, 10, 21, u, mark, w: 11, h: 1)
+            cell(ctx, 10, 24, u, mark, w: 11, h: 1)
+            cell(ctx, 10, 27, u, mark, w: 11, h: 1)
+        case .tuxedo:
+            for y in 23...29 { cell(ctx, 13, y, u, white, w: 6, h: 1) }
+            for y in 15...17 { cell(ctx, 13, y, u, white, w: 6, h: 1) }
+        case .calico:
+            let ginger = CatColor.ginger.palette.base
+            let char = CatColor.charcoal.palette.base
+            for (x, y) in [(7, 9), (8, 9), (7, 10), (8, 10), (9, 10)] { cell(ctx, x, y, u, ginger) }
+            for (x, y) in [(18, 19), (19, 19), (20, 19), (18, 20), (19, 20), (20, 20), (19, 21)] { cell(ctx, x, y, u, char) }
+            for (x, y) in [(10, 25), (11, 25), (10, 26), (11, 26), (12, 26)] { cell(ctx, x, y, u, ginger) }
+        case .spots:
+            for (x, y) in [(11, 20), (14, 23), (19, 21), (16, 26), (12, 27), (20, 25), (9, 12), (22, 12)] { cell(ctx, x, y, u, mark) }
+        case .socks:
+            cell(ctx, 11, 29, u, white, w: 3, h: 2)
+            cell(ctx, 18, 29, u, white, w: 3, h: 2)
+            for y in 24...28 { cell(ctx, 14, y, u, white, w: 4, h: 1) }
         }
     }
 
