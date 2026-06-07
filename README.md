@@ -129,6 +129,37 @@ shows a name-aware bubble ("focus, <name>!" / "break time, <name>!") at each
 switch. Set **Focus Length** / **Break Length** in the same submenu (defaults
 25m / 5m). The panel grows taller while the timer is shown.
 
+## Sharing / installing
+
+The app is **not signed with a paid Apple Developer ID** (it's ad-hoc signed for
+local use), so macOS Gatekeeper will warn whoever opens it. That's expected for a
+personal app — they just need to allow it once.
+
+**Build a shareable zip:**
+
+```bash
+cd ~/PixelCat
+xcodebuild -project PixelCat.xcodeproj -target PixelCat -configuration Release \
+  CONFIGURATION_BUILD_DIR="$PWD/release" build
+cd release && ditto -c -k --sequesterRsrc --keepParent PixelCat.app ~/Desktop/PixelCat.zip
+```
+
+**For whoever receives it:** unzip, drag `PixelCat.app` to `/Applications`, then
+the first time **right-click the app → Open → Open** (a plain double-click is
+blocked for unsigned apps). If macOS still refuses ("damaged / can't be
+checked"), clear the download quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/PixelCat.app
+```
+
+Then grant Accessibility (System Settings → Privacy & Security → Accessibility)
+if they want the keyboard/scroll tricks.
+
+> The only way to remove the Gatekeeper prompt entirely is a paid Apple Developer
+> account (to sign + notarize). For sharing with friends, the right-click-Open
+> step is the normal workaround.
+
 ## Roadmap (next)
 
-Appearance customization — pick a cat color + coat pattern from the menu.
+Appearance customization — pick a cat color + coat pattern from the menu. (Done.)
