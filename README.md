@@ -120,6 +120,15 @@ PixelCat/
   Features/ClaudeDesktopWatcher.swift  experimental AX watcher
 ```
 
-## Roadmap (v2)
+## Pomodoro timer
 
-Pomodoro timer (focus/break loops with a floating pixel timer beside the cat).
+A pixel timer shelf that sits **below the cat** (the cat stands on it). Toggle it
+from the menu bar: **Pomodoro Timer ▸ Show Timer**, then **Start**. It runs
+focus → break loops; the bar stretches down as time runs out and the cat meows +
+shows a name-aware bubble ("focus, <name>!" / "break time, <name>!") at each
+switch. Set **Focus Length** / **Break Length** in the same submenu (defaults
+25m / 5m). The panel grows taller while the timer is shown.
+
+## Roadmap (next)
+
+Appearance customization — pick a cat color + coat pattern from the menu.
