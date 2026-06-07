@@ -362,7 +362,10 @@ enum CatSprite {
         roundedBlock(ctx, x: Int(p.x) - 1, y: Int(p.y), w: 5, h: 4, r: 1, color: eyeWhite, u: u)
         let gx = max(-1, min(1, gaze.x)) * facing
         let gy = max(-1, min(1, gaze.y))
-        let px = p.x + CGFloat(gx)
+        // Box is x=p.x-1, w=5 → centre at p.x+1.5; pupil is 1.6 wide, so its
+        // centred resting x is p.x+0.7. (Previously p.x+0, which biased it left
+        // and stopped it reaching the right side.)
+        let px = p.x + 0.7 + CGFloat(gx)
         let py = p.y + 1.2 - CGFloat(gy)
         let r = CGRect(x: px * u, y: py * u, width: 1.6 * u, height: 1.6 * u)
         ctx.fill(Path(ellipseIn: r), with: .color(outline))
