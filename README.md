@@ -1,8 +1,20 @@
-# PixelCat 🐾
+<p align="center">
+  <img src="docs/banner.png" width="640" alt="PixelCat">
+</p>
+
+<p align="center">
+  <a href="https://github.com/lsuryatej/PixelCat/releases/latest">
+    <img src="https://img.shields.io/github/v/release/lsuryatej/PixelCat?style=flat-square&color=e9a96a" alt="latest release">
+  </a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-555?style=flat-square" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/SwiftUI%20%2B%20AppKit-fff5e6?style=flat-square" alt="SwiftUI + AppKit">
+</p>
 
 A tiny pixel-art cat that lives at the bottom of your screen. Menu-bar only
 (no Dock icon), floating transparent window, always on top. Built with
 SwiftUI + AppKit, drawn procedurally (no image assets).
+
+**[⬇︎ Download the latest release](https://github.com/lsuryatej/PixelCat/releases/latest)** — unzip, drag to Applications, then right-click → Open the first time.
 
 ## Build & run
 
