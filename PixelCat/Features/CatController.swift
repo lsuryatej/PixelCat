@@ -122,7 +122,7 @@ final class CatController {
             happyUntil = ProcessInfo.processInfo.systemUptime + 1.3
             state.lift = 16
         }
-        sound.meow()
+        sound.longMeow()
     }
 
     func setHeadHover(_ over: Bool) {
@@ -174,7 +174,7 @@ final class CatController {
         let now = ProcessInfo.processInfo.systemUptime
         happyUntil = now + 1.5
         state.lift = 20
-        sound.meow()
+        sound.longMeow()
         showBubble(state.name.isEmpty ? "done!" : "done, \(state.name)!", seconds: 3)
     }
 
@@ -195,7 +195,7 @@ final class CatController {
         stretchUntil = now + 2.4
         let who = state.name.isEmpty ? "" : ", \(state.name)"
         showBubble("stretch time\(who)!", seconds: 4)
-        sound.meow()
+        sound.longMeow()
     }
 
     // MARK: Tick

@@ -9,6 +9,7 @@ final class SoundSynth {
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
 
     private lazy var meowBuffer: AVAudioPCMBuffer = makeMeow()
+    private lazy var meowLongBuffer: AVAudioPCMBuffer = makeMeowLong()
     private lazy var purrBuffer: AVAudioPCMBuffer = makePurr()
 
     private var started = false
@@ -31,6 +32,14 @@ final class SoundSynth {
     func meow() {
         ensureRunning()
         meowNode.scheduleBuffer(meowBuffer, at: nil, options: .interrupts, completionHandler: nil)
+        meowNode.play()
+    }
+
+    /// A longer, more drawn-out "meoww" for announcements (timer phase change,
+    /// agent done, stretch) so it's clearly distinct from the short click meow.
+    func longMeow() {
+        ensureRunning()
+        meowNode.scheduleBuffer(meowLongBuffer, at: nil, options: .interrupts, completionHandler: nil)
         meowNode.play()
     }
 
@@ -72,6 +81,30 @@ final class SoundSynth {
             // Envelope: quick attack, gentle decay.
             let env = expEnv(p, attack: 0.06, release: 0.5)
             out[i] = s * env * 0.28
+        }
+        return buf
+    }
+
+    private func makeMeowLong() -> AVAudioPCMBuffer {
+        let sr = Float(format.sampleRate)
+        let dur: Float = 1.05
+        let n = AVAudioFrameCount(sr * dur)
+        let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: n)!
+        buf.frameLength = n
+        let out = buf.floatChannelData![0]
+
+        var phase: Float = 0
+        for i in 0..<Int(n) {
+            let t = Float(i) / sr
+            let p = t / dur
+            // Two-swell, wavy "me-oww" contour with vibrato — longer tail.
+            let base: Float = 520 + 220 * sin(.pi * p) + 80 * sin(.pi * 3 * p)
+            let vibrato: Float = 16 * sin(2 * .pi * 5.5 * t)
+            let freq = base + vibrato
+            phase += 2 * .pi * freq / sr
+            let s = sin(phase) * 0.6 + sin(phase * 2) * 0.25 + sin(phase * 3) * 0.12
+            let env = expEnv(p, attack: 0.05, release: 0.62)
+            out[i] = s * env * 0.30
         }
         return buf
     }

@@ -131,7 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                          action: #selector(timerStartPause), keyEquivalent: "").target = self
         }
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: "").target = self
         if !AccessibilityPermission.isTrusted {
             menu.addItem(withTitle: "Enable Keyboard/Scroll Tricks…",
                          action: #selector(requestAccessibility), keyEquivalent: "").target = self
@@ -164,7 +164,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let host = NSHostingController(rootView: view)
             let win = NSWindow(contentViewController: host)
             win.title = "PixelCat Settings"
-            win.styleMask = [.titled, .closable]
+            win.styleMask = [.titled, .closable, .fullSizeContentView]
+            win.titlebarAppearsTransparent = true
+            win.titleVisibility = .hidden
+            win.isMovableByWindowBackground = true
+            win.backgroundColor = NSColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1)
             win.isReleasedWhenClosed = false
             win.level = .floating
             prefsWindow = win
