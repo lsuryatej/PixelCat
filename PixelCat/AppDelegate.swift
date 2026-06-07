@@ -169,6 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             win.titleVisibility = .hidden
             win.isMovableByWindowBackground = true
             win.backgroundColor = NSColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1)
+            win.appearance = NSAppearance(named: .aqua)   // keep cream/ink readable in dark mode
             win.isReleasedWhenClosed = false
             win.level = .floating
             prefsWindow = win

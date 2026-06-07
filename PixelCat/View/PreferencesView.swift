@@ -61,6 +61,8 @@ private struct PixelNumberField: View {
             step("–") { set(value - 1) }
             TextField("", value: $value, format: .number)
                 .font(PX.font(12))
+                .foregroundStyle(PX.ink)
+                .tint(PX.ink)
                 .multilineTextAlignment(.center)
                 .textFieldStyle(.plain)
                 .frame(width: 40)
@@ -114,6 +116,8 @@ private struct PixelTextField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .font(PX.font(11, .medium))
+            .foregroundStyle(PX.ink)
+            .tint(PX.ink)
             .textFieldStyle(.plain)
             .padding(6)
             .pixelBox(PX.field)
