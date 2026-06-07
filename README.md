@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" width="640" alt="PixelCat">
+  <img src="docs/banner.png" width="800" alt="PixelCat">
 </p>
 
 <p align="center">
@@ -8,18 +8,76 @@
   </a>
   <img src="https://img.shields.io/badge/macOS-14%2B-555?style=flat-square" alt="macOS 14+">
   <img src="https://img.shields.io/badge/SwiftUI%20%2B%20AppKit-fff5e6?style=flat-square" alt="SwiftUI + AppKit">
+  <img src="https://img.shields.io/badge/license-MIT-c8e6c9?style=flat-square" alt="MIT license">
 </p>
 
-A tiny pixel-art cat that lives at the bottom of your screen. Menu-bar only
-(no Dock icon), floating transparent window, always on top. Built with
-SwiftUI + AppKit, drawn procedurally (no image assets).
+A tiny pixel-art cat that lives at the bottom of your screen. It breathes, blinks, walks around, purrs when you pet it, and meows when your AI agent finishes a task.
 
-**[⬇︎ Download the latest release](https://github.com/lsuryatej/PixelCat/releases/latest)** — unzip, drag to Applications, then right-click → Open the first time.
+**[⬇ Download v1.0](https://github.com/lsuryatej/PixelCat/releases/latest)** — unzip, right-click → Open the first time (macOS will warn you — it's a personal unsigned app, that's expected).
 
-## Build & run
+---
 
-Requires Xcode 26+. No paid Apple Developer account needed — it builds with
-free local (ad-hoc) signing.
+## What it does
+
+| | |
+|---|---|
+| Idle | breathes, blinks, flicks its tail |
+| Walks | wanders at the bottom of your screen |
+| Eye-follow | pupils track your cursor |
+| Mochi drag | pick it up and fling it — it stretches and wobbles back |
+| Mouse hunt | move fast and it chases you |
+| Petting | hover over its head → purr + floating hearts |
+| Overheat | type too fast → turns red with steam puffs |
+| Paper unroll | scroll → it unrolls a little paper scroll |
+| Stretch reminders | meows at you every 30 min (configurable) |
+| Pomodoro timer | a pixel shelf below the cat; coffee mug in focus mode, poop piles on break |
+| Appearance | pick a coat color and pattern from Settings |
+
+## Controls
+
+- **Left-click the menu-bar paw** — show / hide the cat
+- **Right-click the menu-bar paw** — Sleep, Wake, Quit
+- **Right-click the cat** — open Settings (colors, patterns, timer, your name)
+
+> Some tricks (keyboard kneading, paper unroll, the Claude Desktop watcher) need **Accessibility** permission. Grant it in System Settings → Privacy & Security → Accessibility when the app asks.
+
+## AI agent reactions
+
+The cat reads `~/.pixelcat/state.json`. Write to it from any agent, script, or tool:
+
+```bash
+echo '{"status":"thinking"}' > ~/.pixelcat/state.json   # thinking face
+echo '{"status":"done"}'     > ~/.pixelcat/state.json   # happy hop + meow
+echo '{"status":"idle"}'     > ~/.pixelcat/state.json   # back to normal
+```
+
+**Claude Code hook** — add to `~/.claude/settings.json` so the cat reacts while tools run:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "*", "hooks": [
+        { "type": "command", "command": "echo '{\"status\":\"thinking\"}' > ~/.pixelcat/state.json" }
+      ]}
+    ],
+    "Stop": [
+      { "hooks": [
+        { "type": "command", "command": "echo '{\"status\":\"done\"}' > ~/.pixelcat/state.json" }
+      ]}
+    ]
+  }
+}
+```
+
+There's also an experimental Claude Desktop watcher that infers thinking/done state by watching its window — it needs Accessibility permission and may need re-tuning if Anthropic updates the desktop app UI.
+
+---
+
+<details>
+<summary>Build from source</summary>
+
+Requires Xcode 26+. No paid Apple Developer account needed — builds with free local (ad-hoc) signing.
 
 ```bash
 cd ~/PixelCat
@@ -28,150 +86,26 @@ xcodebuild -project PixelCat.xcodeproj -target PixelCat \
 open ~/PixelCat/build/PixelCat.app
 ```
 
-Or just open `PixelCat.xcodeproj` in Xcode and hit Run.
+Or open `PixelCat.xcodeproj` in Xcode and hit Run.
 
-## Permissions
+**Note:** with ad-hoc signing the binary signature can change between rebuilds, which sometimes resets the Accessibility grant. If keyboard/scroll tricks go quiet after a rebuild, toggle PixelCat off and on in the Accessibility list.
 
-Some tricks need **Accessibility** permission (to see global keyboard/scroll
-events and to peek at the Claude Desktop window):
+</details>
 
-- Keyboard kneading + overheat
-- Paper unroll on scroll
-- The experimental Claude Desktop "thinking/done" watcher
+<details>
+<summary>Sending it to someone else</summary>
 
-On first launch the app asks for it. Grant it in
-**System Settings → Privacy & Security → Accessibility** (toggle PixelCat on).
+The app isn't signed with a paid Apple Developer ID, so Gatekeeper will warn whoever opens it. They just need to do this once:
 
-Everything else — idle, walking, click, eye-follow, mochi drag, petting/purr,
-stretch reminders, the file-based agent bridge, pinned notes — works **without**
-any permission.
+1. Unzip → right-click `PixelCat.app` → **Open** → **Open**
+2. If macOS still blocks it: `xattr -dr com.apple.quarantine /Applications/PixelCat.app`
 
-> **Rebuild note:** with local ad-hoc signing, the binary signature can change
-> between builds, which sometimes makes macOS forget the Accessibility grant.
-> If the keyboard/scroll tricks go quiet after a rebuild, toggle PixelCat off
-> and on again in that Accessibility list.
+AirDrop is friendlier than a download link — files from AirDrop pick up fewer quarantine flags.
 
-## Menu (right-click the paw in the menu bar)
+</details>
 
-- **Hide / Show** — also the left-click action on the menu-bar paw
-- **Sleep / Wake** — curl up 💤 / resume
-- **Stretch Now** — trigger a stretch immediately
-- **Set Name…** — the cat calls you by name in reminders and agent "done"
-- **Pin Note… / Edit Note… / Clear Note** — a note bubble above its head
-- **Stretch Interval…** — minutes between stretch reminders (default 30)
-- **Quit**
+---
 
-## What it does
+## License
 
-Idle (breathe/blink/tail), random walking, click → happy hop, **eye-follow**,
-**mochi drag** (lift to stretch; shake to wobble), **mouse hunt** (move the
-cursor fast and it chases), **petting** (hover its head → purr + hearts),
-**keyboard kneading** (it kneads while you type), **overheat** (type too fast →
-turns red with steam), **stretch reminders**, **paper unroll** on scroll,
-**pinned notes**, and **AI-agent awareness**.
-
-## Driving the agent reactions
-
-The cat reads `~/.pixelcat/state.json`. Write a `status` of `thinking`, `done`,
-or `idle` and it reacts (thinking face / happy hop + meow / back to normal).
-Anything that can write a file can drive it:
-
-```bash
-echo '{"status":"thinking"}' > ~/.pixelcat/state.json   # puts on a thinking face
-echo '{"status":"done"}'     > ~/.pixelcat/state.json   # happy hop + meow
-echo '{"status":"idle"}'     > ~/.pixelcat/state.json   # back to normal
-```
-
-### Claude Code hooks
-
-Add to `~/.claude/settings.json` so the cat thinks while a tool runs and cheers
-when Claude stops:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "*", "hooks": [
-        { "type": "command", "command": "echo '{\"status\":\"thinking\"}' > ~/.pixelcat/state.json" }
-      ] }
-    ],
-    "Stop": [
-      { "hooks": [
-        { "type": "command", "command": "echo '{\"status\":\"done\"}' > ~/.pixelcat/state.json" }
-      ] }
-    ]
-  }
-}
-```
-
-### Claude Desktop (experimental)
-
-There's no official Claude Desktop signal, so PixelCat infers it by watching the
-desktop window's Accessibility tree for the "stop generating" control. It needs
-the Accessibility permission and is **best-effort** — if Anthropic restyles the
-desktop UI it may need re-tuning (see `appearsThinking(in:)` in
-`Features/ClaudeDesktopWatcher.swift`).
-
-## Project layout
-
-```
-PixelCat/
-  PixelCatApp.swift            @main, accessory app
-  AppDelegate.swift            panel + status item + monitors + menu
-  Window/CatPanel.swift        borderless floating NSPanel
-  State/CatState.swift         @Observable state
-  State/Settings.swift         UserDefaults persistence
-  View/CatView.swift           SwiftUI Canvas + note bubble
-  View/CatSprite.swift         procedural pixel-art renderer
-  View/CatHostingView.swift    AppKit mouse handling (drag/click/hover)
-  Input/AccessibilityPermission.swift
-  Input/GlobalEventMonitor.swift   global keyDown + scrollWheel
-  Features/CatController.swift  the brain: moods, physics, behaviors
-  Features/SoundSynth.swift     procedural meow + purr
-  Features/AgentBridge.swift    ~/.pixelcat/state.json watcher
-  Features/ClaudeDesktopWatcher.swift  experimental AX watcher
-```
-
-## Pomodoro timer
-
-A pixel timer shelf that sits **below the cat** (the cat stands on it). Toggle it
-from the menu bar: **Pomodoro Timer ▸ Show Timer**, then **Start**. It runs
-focus → break loops; the bar stretches down as time runs out and the cat meows +
-shows a name-aware bubble ("focus, <name>!" / "break time, <name>!") at each
-switch. Set **Focus Length** / **Break Length** in the same submenu (defaults
-25m / 5m). The panel grows taller while the timer is shown.
-
-## Sharing / installing
-
-The app is **not signed with a paid Apple Developer ID** (it's ad-hoc signed for
-local use), so macOS Gatekeeper will warn whoever opens it. That's expected for a
-personal app — they just need to allow it once.
-
-**Build a shareable zip:**
-
-```bash
-cd ~/PixelCat
-xcodebuild -project PixelCat.xcodeproj -target PixelCat -configuration Release \
-  CONFIGURATION_BUILD_DIR="$PWD/release" build
-cd release && ditto -c -k --sequesterRsrc --keepParent PixelCat.app ~/Desktop/PixelCat.zip
-```
-
-**For whoever receives it:** unzip, drag `PixelCat.app` to `/Applications`, then
-the first time **right-click the app → Open → Open** (a plain double-click is
-blocked for unsigned apps). If macOS still refuses ("damaged / can't be
-checked"), clear the download quarantine flag:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/PixelCat.app
-```
-
-Then grant Accessibility (System Settings → Privacy & Security → Accessibility)
-if they want the keyboard/scroll tricks.
-
-> The only way to remove the Gatekeeper prompt entirely is a paid Apple Developer
-> account (to sign + notarize). For sharing with friends, the right-click-Open
-> step is the normal workaround.
-
-## Roadmap (next)
-
-Appearance customization — pick a cat color + coat pattern from the menu. (Done.)
+[MIT](LICENSE)
