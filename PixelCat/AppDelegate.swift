@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller = CatController(state: state, panel: panel)
         if let host = panel.contentView as? CatHostingView {
             host.controller = controller
-            host.onRightClick = { [weak self] in self?.openSettings() }
+            host.onRightClick = { [weak self] in self?.toggleSettings() }
         }
         controller.start()
 
@@ -156,13 +156,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func requestAccessibility() { AccessibilityPermission.prompt() }
     @objc private func quit() { NSApp.terminate(nil) }
 
+    /// Right-clicking the cat toggles the window: open if hidden, collapse if shown.
+    @objc private func toggleSettings() {
+        if let w = prefsWindow, w.isVisible {
+            w.orderOut(nil)
+        } else {
+            openSettings()
+        }
+    }
+
     @objc private func openSettings() {
         if prefsWindow == nil {
             let view = PreferencesView(
                 state: state,
                 pomodoro: pomodoro,
                 setTimerVisible: { [weak self] on in self?.setTimerVisible(on) },
-                rescheduleStretch: { [weak self] in self?.controller.scheduleStretchReminder() }
+                rescheduleStretch: { [weak self] in self?.controller.scheduleStretchReminder() },
+                onClose: { [weak self] in self?.prefsWindow?.orderOut(nil) }
             )
             let host = NSHostingController(rootView: view)
             let win = NSWindow(contentViewController: host)

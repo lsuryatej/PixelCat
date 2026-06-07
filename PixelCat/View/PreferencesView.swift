@@ -142,6 +142,7 @@ struct PreferencesView: View {
     let pomodoro: PomodoroEngine
     let setTimerVisible: (Bool) -> Void
     let rescheduleStretch: () -> Void
+    let onClose: () -> Void
 
     @State private var preview = CatState()
     @State private var focus = Settings.focusMinutes
@@ -171,6 +172,12 @@ struct PreferencesView: View {
             Image(systemName: "pawprint.fill").foregroundStyle(PX.ink)
             Text("PIXELCAT").font(PX.font(15)).foregroundStyle(PX.ink)
             Spacer()
+            Button(action: onClose) {
+                Text("✕").font(PX.font(13)).foregroundStyle(PX.ink).frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            .pixelBox(PX.paper)
+            .help("Close (or right-click the cat)")
         }
     }
 
