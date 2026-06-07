@@ -202,67 +202,100 @@ enum CatSprite {
         // Timer-phase prop in front of the cat: coffee while focusing, …
         // the aftermath while on break.
         if state.timerVisible {
+            let pal = state.coatColor.palette
             if state.timerPhase == .focus {
-                drawCoffeeMug(ctx, cx: cx, baseY: footY, u: u, t: t)
+                drawCoffeeMug(ctx, cx: cx, baseY: footY, u: u, t: t, paw: pal.shade)
             } else {
-                drawPoop(ctx, cx: cx, baseY: footY, u: u)
+                drawPoop(ctx, cx: cx, baseY: footY, u: u, t: t)
             }
         }
     }
 
-    private static func drawCoffeeMug(_ ctx: GraphicsContext, cx: CGFloat, baseY: CGFloat, u: CGFloat, t: Double) {
-        let w = u * 4, h = u * 4
-        let x = cx - w / 2 + u * 0.5      // nudged slightly right of centre
-        let y = baseY - h
+    private static func drawCoffeeMug(_ ctx: GraphicsContext, cx: CGFloat, baseY: CGFloat, u: CGFloat, t: Double, paw: Color) {
+        // ~2× size, tucked against the right paw so it reads as held.
+        let w = u * 8, h = u * 8
+        let x = cx + u * 3 - w / 2         // centred over the right paw (~col 19)
+        let y = baseY - u * 1.0 - h        // lifted to paw height
         let cream = Color(red: 0.98, green: 0.97, blue: 0.95)
         let coffee = Color(red: 0.36, green: 0.23, blue: 0.15)
-        let lw = max(1, u * 0.28)
+        let lw = max(1, u * 0.32)
 
         // steam
         for i in 0..<2 {
-            let sx = x + w * 0.35 + CGFloat(i) * w * 0.3
-            let wob = CGFloat(sin(t * 3 + Double(i) * 1.6)) * u * 0.4
+            let sx = x + w * 0.32 + CGFloat(i) * w * 0.34
+            let wob = CGFloat(sin(t * 3 + Double(i) * 1.6)) * u * 0.7
             var p = Path()
-            p.move(to: CGPoint(x: sx, y: y - u * 0.2))
-            p.addQuadCurve(to: CGPoint(x: sx, y: y - u * 1.7),
-                           control: CGPoint(x: sx + wob, y: y - u * 0.95))
+            p.move(to: CGPoint(x: sx, y: y - u * 0.3))
+            p.addQuadCurve(to: CGPoint(x: sx, y: y - u * 3.0),
+                           control: CGPoint(x: sx + wob, y: y - u * 1.7))
             ctx.stroke(p, with: .color(steamCol.opacity(0.7)), lineWidth: lw)
         }
         // cup
         let cup = CGRect(x: x, y: y, width: w, height: h)
-        ctx.fill(Path(roundedRect: cup, cornerRadius: u * 0.6), with: .color(cream))
+        ctx.fill(Path(roundedRect: cup, cornerRadius: u * 1.0), with: .color(cream))
         // coffee surface
-        let surf = CGRect(x: x + u * 0.5, y: y + u * 0.5, width: w - u, height: u * 1.0)
-        ctx.fill(Path(roundedRect: surf, cornerRadius: u * 0.3), with: .color(coffee))
+        let surf = CGRect(x: x + u * 0.8, y: y + u * 0.8, width: w - u * 1.6, height: u * 1.8)
+        ctx.fill(Path(roundedRect: surf, cornerRadius: u * 0.5), with: .color(coffee))
         // handle
-        let handle = CGRect(x: x + w - u * 0.5, y: y + u * 1.2, width: u * 1.5, height: u * 2.0)
-        ctx.stroke(Path(roundedRect: handle, cornerRadius: u * 0.8), with: .color(outline), lineWidth: lw)
+        let handle = CGRect(x: x + w - u * 0.8, y: y + u * 2.4, width: u * 2.6, height: u * 3.6)
+        ctx.stroke(Path(roundedRect: handle, cornerRadius: u * 1.3), with: .color(outline), lineWidth: lw)
         // cup outline
-        ctx.stroke(Path(roundedRect: cup, cornerRadius: u * 0.6), with: .color(outline), lineWidth: lw)
+        ctx.stroke(Path(roundedRect: cup, cornerRadius: u * 1.0), with: .color(outline), lineWidth: lw)
+
+        // the cat's paw gripping the near (left) side of the mug
+        let pawRect = CGRect(x: x - u * 1.2, y: y + h * 0.42, width: u * 2.6, height: u * 2.0)
+        ctx.fill(Path(roundedRect: pawRect, cornerRadius: u * 0.9), with: .color(paw))
+        ctx.stroke(Path(roundedRect: pawRect, cornerRadius: u * 0.9), with: .color(outline), lineWidth: lw)
+        // two toe lines
+        for k in 1...2 {
+            let tx = pawRect.minX + CGFloat(k) * pawRect.width / 3
+            var p = Path()
+            p.move(to: CGPoint(x: tx, y: pawRect.minY + u * 0.4))
+            p.addLine(to: CGPoint(x: tx, y: pawRect.minY + u * 1.2))
+            ctx.stroke(p, with: .color(outline.opacity(0.5)), lineWidth: 1)
+        }
     }
 
-    private static func drawPoop(_ ctx: GraphicsContext, cx: CGFloat, baseY: CGFloat, u: CGFloat) {
+    private static func drawPoop(_ ctx: GraphicsContext, cx: CGFloat, baseY: CGFloat, u: CGFloat, t: Double) {
         let brown = Color(red: 0.46, green: 0.31, blue: 0.18)
         let brownLt = Color(red: 0.56, green: 0.40, blue: 0.25)
+        let odor = Color(red: 0.52, green: 0.56, blue: 0.36)
 
         func pile(_ pcx: CGFloat, scale: CGFloat) {
-            let bw = u * 3 * scale
+            // ~2× size
+            let bw = u * 6 * scale
             let blobs = [
-                CGRect(x: pcx - bw / 2,     y: baseY - u * 1.2 * scale, width: bw,        height: u * 1.2 * scale),
-                CGRect(x: pcx - bw * 0.36,  y: baseY - u * 2.1 * scale, width: bw * 0.72, height: u * 1.0 * scale),
-                CGRect(x: pcx - bw * 0.22,  y: baseY - u * 2.8 * scale, width: bw * 0.44, height: u * 0.8 * scale),
+                CGRect(x: pcx - bw / 2,    y: baseY - u * 2.4 * scale, width: bw,        height: u * 2.4 * scale),
+                CGRect(x: pcx - bw * 0.36, y: baseY - u * 4.2 * scale, width: bw * 0.72, height: u * 2.0 * scale),
+                CGRect(x: pcx - bw * 0.22, y: baseY - u * 5.6 * scale, width: bw * 0.44, height: u * 1.6 * scale),
             ]
             for (i, r) in blobs.enumerated() {
                 ctx.fill(Path(roundedRect: r, cornerRadius: r.height / 2), with: .color(i == 0 ? brown : brownLt))
                 ctx.stroke(Path(roundedRect: r, cornerRadius: r.height / 2), with: .color(outline.opacity(0.5)), lineWidth: 1)
             }
             // swirl tip
-            let tip = CGRect(x: pcx - u * 0.3 * scale, y: baseY - u * 3.2 * scale, width: u * 0.6 * scale, height: u * 0.6 * scale)
+            let tip = CGRect(x: pcx - u * 0.6 * scale, y: baseY - u * 6.4 * scale, width: u * 1.2 * scale, height: u * 1.2 * scale)
             ctx.fill(Path(ellipseIn: tip), with: .color(brownLt))
+
+            // squiggly odor lines rising from the tip
+            let topY = baseY - u * 6.6 * scale
+            for i in 0..<2 {
+                let ox = pcx + CGFloat(i == 0 ? -1 : 1) * u * 1.0
+                var p = Path()
+                p.move(to: CGPoint(x: ox, y: topY))
+                let steps = 5
+                for s in 1...steps {
+                    let fy = CGFloat(s) / CGFloat(steps)
+                    let yy = topY - fy * u * 4.0 * scale
+                    let wob = CGFloat(sin(Double(s) * 1.6 + t * 4 + Double(i))) * u * 0.6
+                    p.addLine(to: CGPoint(x: ox + wob, y: yy))
+                }
+                ctx.stroke(p, with: .color(odor.opacity(0.55)), lineWidth: max(1, u * 0.22))
+            }
         }
 
-        pile(cx - u * 2.6, scale: 0.85)
-        pile(cx + u * 2.3, scale: 1.05)
+        pile(cx - u * 4.2, scale: 0.85)
+        pile(cx + u * 3.8, scale: 1.05)
     }
 
     private static func drawHeart(_ ctx: GraphicsContext, x: CGFloat, y: CGFloat, s: CGFloat, color: Color) {

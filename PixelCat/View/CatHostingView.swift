@@ -6,6 +6,7 @@ import SwiftUI
 /// over the head for petting.
 final class CatHostingView: NSHostingView<CatView> {
     weak var controller: CatController?
+    var onRightClick: (() -> Void)?
 
     private var grabOffset: NSPoint = .zero
     private var didDrag = false
@@ -14,6 +15,8 @@ final class CatHostingView: NSHostingView<CatView> {
     private var trackingAreaRef: NSTrackingArea?
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func rightMouseDown(with event: NSEvent) { onRightClick?() }
 
     // MARK: Tracking area (hover / petting)
 

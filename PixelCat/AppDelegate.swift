@@ -29,7 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
 
         controller = CatController(state: state, panel: panel)
-        (panel.contentView as? CatHostingView)?.controller = controller
+        if let host = panel.contentView as? CatHostingView {
+            host.controller = controller
+            host.onRightClick = { [weak self] in self?.openSettings() }
+        }
         controller.start()
 
         setupInput()
